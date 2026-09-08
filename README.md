@@ -1,78 +1,96 @@
 # 🍔 Cardápio Digital — Frontend
 
-Interface web do Cardápio Digital. Consome a [API de Cardápio](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO) e exibe os produtos organizados por categoria, com busca por nome.
+Interface web do Cardápio Digital: exibe os cardápios de restaurantes e lanchonetes, com os produtos organizados por categoria, e consome a [API de Cardápio](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO).
 
-Feito em HTML, CSS e JavaScript puros — sem framework e sem dependências para instalar.
+A aplicação é composta por duas partes: este frontend, responsável pela interface do usuário, e a API REST, responsável pelos dados e pela comunicação com o banco. O projeto será publicado em produção na Vercel.
+
+> **Status:** início do projeto. A base (Next.js + Tailwind) está configurada e as telas ainda serão construídas.
 
 ## Funcionalidades
 
-- [x] Listagem dos produtos agrupados por categoria
-- [x] Busca de produtos por nome
-- [x] Preço formatado em real (R$)
-- [x] Destaque visual para produtos indisponíveis
-- [x] Layout responsivo
-- [x] Aviso quando a API está fora do ar
-- [ ] Montagem de pedido
-- [ ] Cálculo do valor total do pedido
+- [x] Estrutura do projeto (Next.js 16, App Router, TypeScript)
+- [x] Tailwind CSS configurado
+- [ ] Integração com a API
+- [ ] Listagem do cardápio com produtos por categoria
+- [ ] Pesquisa e filtro de produtos
+- [ ] Tela de detalhe do produto
+- [ ] Montagem do pedido e valor total
+- [ ] Layout responsivo
+- [ ] Deploy na Vercel
 
 ## Tecnologias
 
 | Ferramenta | Uso |
 |---|---|
-| HTML5 | Estrutura da página |
-| CSS3 | Estilos e layout responsivo (Grid) |
-| JavaScript | Consumo da API com `fetch` |
+| Next.js 16 | Framework React (App Router) |
+| React 19 | Biblioteca de interface |
+| TypeScript 5 | Tipagem estática |
+| Tailwind CSS 4 | Estilização |
+| ESLint 9 | Padronização do código |
 
 ## Como rodar
 
-Este projeto depende da API. **Suba a API primeiro:**
+**Pré-requisitos:** Node.js 20+ e a API rodando (veja o README do backend).
+
+**1. Instale as dependências**
 
 ```bash
-cd ../API-de-Card-pio
+npm install
+```
+
+**2. Suba o servidor de desenvolvimento**
+
+```bash
 npm run dev
 ```
 
-A API precisa estar respondendo em `http://localhost:3000`.
+A aplicação abre em `http://localhost:3000`.
 
-**Depois abra o frontend** com a extensão **Live Server** do VS Code — clique com o botão direito no `index.html` e escolha *Open with Live Server*.
+> A API também usa a porta `3000` por padrão. Rodando os dois na mesma máquina, mude a porta de um deles — por exemplo, `PORT=3001` no `.env` da API, ou `npm run dev -- -p 3001` aqui no frontend.
 
-Abrir o arquivo direto pelo Explorer também costuma funcionar, mas o Live Server é mais confiável: o navegador trata páginas abertas por `file://` de forma diferente e isso pode esbarrar em bloqueio de CORS.
+### Scripts
 
-## Estrutura
-
-```
-index.html    Estrutura da página
-style.css     Estilos
-script.js     Consumo da API e renderização
-```
-
-## Configuração da API
-
-O endereço da API fica na primeira linha do `script.js`:
-
-```js
-const API = "http://localhost:3000/api";
-```
-
-Em produção, troque pela URL da API publicada:
-
-```js
-const API = "https://sua-api.vercel.app/api";
-```
-
-E libere a URL do frontend na variável `CORS_ORIGIN` da API — sem isso o navegador bloqueia as requisições.
-
-## Endpoints consumidos
-
-| Endpoint | Uso |
+| Comando | O que faz |
 |---|---|
-| `GET /api/produtos` | Carrega o cardápio completo |
-| `GET /api/produtos?busca=termo` | Filtra pelo campo de busca |
+| `npm run dev` | Servidor de desenvolvimento com hot reload |
+| `npm run build` | Gera o build de produção |
+| `npm start` | Sobe o build de produção |
+| `npm run lint` | Roda o ESLint |
 
-Cada produto retornado já traz a categoria junto, e é por ela que o agrupamento na tela é feito.
+## Integração com a API
 
-A busca é enviada para a API — o filtro acontece no banco, não no navegador — com uma pausa de 400ms após a digitação, para não disparar uma requisição a cada tecla.
+A API expõe os recursos em `http://localhost:3000/api`:
 
-## Projeto relacionado
+| Recurso | Rota |
+|---|---|
+| Cardápios | `/api/cardapios` |
+| Categorias | `/api/categorias` |
+| Produtos | `/api/produtos` |
 
-[**API-DE-CARDAPIO**](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO) — a API REST que serve os dados, feita com Node.js, Express, Prisma e PostgreSQL.
+`GET /api/cardapios/:id` já devolve o cardápio completo, com as categorias e os produtos de cada uma — é a chamada que monta a tela principal. A documentação completa dos endpoints está no README da API.
+
+A URL base ficará em uma variável de ambiente, definida no arquivo `.env.local` (não versionado):
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+```
+
+## Estrutura do projeto
+
+```
+src/
+  app/
+    layout.tsx       Layout raiz da aplicação
+    page.tsx         Página inicial
+    globals.css      Estilos globais e import do Tailwind
+next.config.ts       Configuração do Next.js
+postcss.config.mjs   Plugin do Tailwind para o PostCSS
+eslint.config.mjs    Regras do ESLint
+tsconfig.json        Configuração do TypeScript (alias `@/*` para `src/`)
+```
+
+O alias `@/` aponta para `src/`, então os imports ficam como `import Header from "@/components/Header"`.
+
+## Observação
+
+Os arquivos `AGENTS.md` e `CLAUDE.md` contêm instruções para assistentes de IA. O bloco dentro do `AGENTS.md` é gerado automaticamente pelo `next dev` e não deve ser editado à mão.
