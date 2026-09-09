@@ -1,152 +1,97 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import { CategoryGroup } from "@/components/CategoryGroup";
-import { OrderCart } from "@/components/OrderCart";
+import { useRouter } from "next/navigation";
+import { api } from "@/app/services/api";
+import { Cardapio } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ShieldAlert } from "lucide-react";
 
-interface Categoria {
-  id: string;
-  nome: string;
-}
-
-interface Produto {
-  id: string;
-  nome: string;
-  descricao?: string;
-  preco: number;
-  imagemUrl?: string;
-  disponivel: boolean;
-  categoria: Categoria;
-}
-
-const MOCK_PRODUTOS: Produto[] = [
-  {
-    id: "1",
-    nome: "X-Bacon",
-    descricao: "Pão, hambúrguer 150g, queijo cheddar, bacon e cebola caramelizada.",
-    preco: 29.9,
-    disponivel: true,
-    categoria: { id: "c1", nome: "Hambúrgueres" }
-  },
-  {
-    id: "2",
-    nome: "Smash Burger",
-    descricao: "Pão brioche, 2 smash burgers de 90g, duplo queijo prato e molho especial.",
-    preco: 25.0,
-    disponivel: true,
-    categoria: { id: "c1", nome: "Hambúrgueres" }
-  },
-  {
-    id: "3",
-    nome: "Coca-Cola Lata",
-    descricao: "Refrigerante 350ml gelado.",
-    preco: 6.0,
-    disponivel: false,
-    categoria: { id: "c2", nome: "Bebidas" }
-  },
-  {
-    id: "4",
-    nome: "Suco de Laranja",
-    descricao: "Suco natural 400ml.",
-    preco: 9.0,
-    disponivel: true,
-    categoria: { id: "c2", nome: "Bebidas" }
-  },
-  {
-    id: "5",
-    nome: "Batata Frita Rústica",
-    descricao: "Porção individual com maionese da casa.",
-    preco: 14.9,
-    disponivel: true,
-    categoria: { id: "c3", nome: "Porções" }
-  }
-];
-
-export default function CardapioPage() {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+export default function HomeClientePage() {
+  const [cardapios, setCardapios] = useState<Cardapio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 400);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
+  const router = useRouter();
 
   useEffect(() => {
-    if (debouncedSearch) {
-      const filtrados = MOCK_PRODUTOS.filter(p => 
-        p.nome.toLowerCase().includes(debouncedSearch.toLowerCase())
-      );
-      setProdutos(filtrados);
-    } else {
-      setProdutos(MOCK_PRODUTOS);
+    async function carregarCardapios() {
+      try {
+        const dados = await api.getCardapios();
+        setCardapios(dados.filter((c) => c.ativo));
+      } catch (error) {
+        console.error("Erro ao carregar cardápios:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    setIsLoading(false);
-  }, [debouncedSearch]);
-
-  const produtosAgrupados = produtos.reduce((acc, produto) => {
-    const nomeCategoria = produto.categoria?.nome || "Outros";
-    if (!acc[nomeCategoria]) {
-      acc[nomeCategoria] = [];
-    }
-    acc[nomeCategoria].push(produto);
-    return acc;
-  }, {} as Record<string, Produto[]>);
+    carregarCardapios();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-24">
-      <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="min-h-screen bg-gray-50/50">
+      <header className="bg-white border-b py-6 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Cardápio Digital
+            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
+              Nossos Cardápios
             </h1>
-            <p className="text-sm text-gray-500">
-              Faça seu pedido com praticidade.
+            <p className="text-sm text-gray-500 mt-1">
+              Escolha um cardápio abaixo para explorar as delícias disponíveis.
             </p>
           </div>
-          
-          <div className="w-full md:w-80">
-            <SearchBar 
-              value={searchTerm} 
-              onChange={setSearchTerm} 
-            />
-          </div>
+          {/* Botão de Acesso ao Admin */}
+          <Button 
+            variant="outline" 
+            onClick={() => router.push("/admin")}
+            className="flex items-center gap-2"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            Painel Admin
+          </Button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 mt-8 space-y-12">
+      <main className="max-w-5xl mx-auto px-6 py-12">
         {isLoading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-8 w-40 rounded-md" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Skeleton className="h-32 w-full rounded-xl" />
-              <Skeleton className="h-32 w-full rounded-xl" />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
-        ) : Object.keys(produtosAgrupados).length === 0 ? (
+        ) : cardapios.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
-            Nenhum produto encontrado para "{searchTerm}".
+            Nenhum cardápio disponível no momento.
           </div>
         ) : (
-          Object.entries(produtosAgrupados).map(([categoria, itens]) => (
-            <CategoryGroup 
-              key={categoria} 
-              titulo={categoria} 
-              produtos={itens} 
-            />
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {cardapios.map((cardapio) => (
+              <div 
+                key={cardapio.id} 
+                onClick={() => router.push(`/cardapio/${cardapio.id}`)}
+                className="group cursor-pointer bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col"
+              >
+                <div className="overflow-hidden border-b aspect-video">
+                  <img
+                    src={(cardapio as any).imagemUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80"}
+                    alt={cardapio.nome}
+                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                
+                <div className="p-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {cardapio.nome}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                      {cardapio.descricao || "Explore nossos produtos exclusivos."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </main>
-
-      <div className="fixed bottom-6 right-6 z-50">
-        <OrderCart />
-      </div>
     </div>
   );
 }
