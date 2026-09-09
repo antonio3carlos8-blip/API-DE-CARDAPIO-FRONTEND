@@ -15,12 +15,14 @@ interface Produto {
 
 export default function AdminPage() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Estados para o formulário de criação (POST)
   const [novoNome, setNovoNome] = useState("");
   const [novoPreco, setNovoPreco] = useState("");
   const [novaCategoriaId, setNovaCategoriaId] = useState("");
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState("");
 
   const API_URL = "http://localhost:3000/api/produtos";
 
@@ -37,8 +39,21 @@ export default function AdminPage() {
     }
   };
 
+  const fetchCategorias = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/categorias`);
+      const data = await res.json();
+    } catch (error) {
+      console.error("Erro ao buscar categorias:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     fetchProdutos();
+    fetchCategorias();
   }, []);
 
   const handleCriarProduto = async (e: React.FormEvent) => {
@@ -85,7 +100,52 @@ export default function AdminPage() {
         alert("Erro ao excluir o produto.");
       }
     } catch (error) {
-      console.error("Erro ao deletar", error);
+      console.error("Erro ao deletar produto", error);
+    }
+  };
+
+  const handleCriarCategoria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: novaCategoriaNome,
+          categoriaID: novaCategoriaId,
+        }),
+      });
+
+      if (res.ok) {
+        alert("Categoria criada com sucesso!");
+        setNovaCategoriaNome("");
+        setNovaCategoriaId("");
+        fetchCategorias(); // Atualiza a tabela na hora
+      } else {
+        const error = await res.json();
+        alert(`Erro: ${error.erro}`);
+      }
+    } catch (error) {
+      console.error("Erro ao criar categoria", error);
+    }
+  };
+
+  const handleDeletarCategoria = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta categoria?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/categorias/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // Atualiza a lista de categorias
+        fetchCategorias();
+      } else {
+        alert("Erro ao excluir a categoria.");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar categoria", error);
     }
   };
 
@@ -114,7 +174,7 @@ export default function AdminPage() {
         Gestão do Cardápio
       </h1>
 
-      {/* Formulário de Criação (Focado em regras de negócio) */}
+      {/* Formulário de Criação de Produtos (Focado em regras de negócio) */}
       <section className="bg-white p-6 rounded-xl shadow-sm border mb-8">
         <h2 className="text-xl font-semibold mb-4">Adicionar Novo Produto</h2>
         <form onSubmit={handleCriarProduto} className="flex gap-4 items-end">
@@ -151,7 +211,23 @@ export default function AdminPage() {
         </form>
       </section>
 
-      {/* Listagem de Dados / Tabela */}
+      {/* Formulário de Criação de Categorias (Focado em regras de negócio) */}
+      <section className="bg-white p-6 rounded-xl shadow-sm border mb-8">
+        <h2 className="text-xl font-semibold mb-4">Adicionar Nova Categoria</h2>
+        <form onSubmit={handleCriarCategoria} className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label className="text-sm font-medium">Nome da Categoria</label>
+            <Input
+              value={novaCategoriaNome}
+              onChange={(e) => setNovaCategoriaNome(e.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit">Salvar</Button>
+        </form>
+      </section>
+
+      {/* Listagem de Dados / Tabela de Produtos */}
       <section className="bg-white rounded-xl shadow-sm border overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b">
@@ -215,6 +291,51 @@ export default function AdminPage() {
               ))
             )}
           </tbody>
+        </table>
+      </section>
+
+      {/* Listagem de Dados / Tabela de Categorias */}
+      <section className="bg-white rounded-2xl shadow-sm border overflow-hidden mt-8">
+        <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="p-4 font-semibold text-gray-600">Categoria</th>
+                <th className="p-4 font-semibold text-gray-600">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={2} className="p-4 text-center">
+                    Carregando dados...
+                  </td>
+                </tr>
+              ) : categorias.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="p-4 text-center">
+                    Nenhuma categoria cadastrada.
+                  </td>
+                </tr>
+              ) : (
+                categorias.map((categoria) => (
+                  <tr
+                    key={categoria.id}
+                    className="border-b last:border-0 hover:bg-gray-50"
+                  >
+                    <td className="p-4 font-medium">{categoria.nome}</td>
+                    <td className="p-4 flex gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeletarCategoria(categoria.id)}
+                      >
+                        Excluir
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
         </table>
       </section>
     </div>
