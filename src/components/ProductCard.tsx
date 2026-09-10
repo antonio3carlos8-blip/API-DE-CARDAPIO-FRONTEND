@@ -9,13 +9,17 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ produto, onAdd }: ProductCardProps) {
-  const precoFormatado = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(produto.preco);
+  const preco = Number(produto.preco);
+  const precoValido = Number.isFinite(preco) && preco > 0;
+  const precoFormatado = precoValido
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(preco)
+    : "Preço indisponível";
 
   return (
     <Card className={`overflow-hidden transition-all flex flex-col ${!produto.disponivel ? "opacity-60 grayscale-[0.5]" : "hover:shadow-md hover:border-gray-300"}`}>
-      <div className="relative border-b aspect-video">
-        <img 
-          src={produto.imagemUrl || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80"} 
+      <div className="relative h-48 w-full overflow-hidden border-b">
+        <img
+          src={produto.imagemUrl || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80"}
           alt={produto.nome}
           className="object-cover w-full h-full"
         />
@@ -32,7 +36,7 @@ export function ProductCard({ produto, onAdd }: ProductCardProps) {
       <CardContent className="pt-0">
         <div className="flex items-center justify-between mt-4">
           <span className="text-lg font-bold text-gray-900">{precoFormatado}</span>
-          <Button disabled={!produto.disponivel} size="sm" className="rounded-full px-6" onClick={onAdd}>
+          <Button disabled={!produto.disponivel || !precoValido} size="sm" className="rounded-full px-6" onClick={onAdd}>
             Adicionar
           </Button>
         </div>

@@ -8,23 +8,47 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert } from "lucide-react";
 
+import { getErrorMessage } from "@/lib/utils";
+
 export default function HomeClientePage() {
   const [cardapios, setCardapios] = useState<Cardapio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    async function carregarCardapios() {
-      try {
-        const dados = await api.getCardapios();
-        setCardapios(dados.filter((c) => c.ativo));
-      } catch (error) {
-        console.error("Erro ao carregar cardápios:", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const carregarCardapios = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const dados = await api.getCardapios();
+      setCardapios(dados.filter((c) => c.ativo !== false));
+    } catch (error: unknown) {
+      console.error("Erro ao carregar cardápios:", error);
+      setErrorMessage(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    carregarCardapios();
+  };
+
+  useEffect(() => {
+    let ignore = false;
+    api.getCardapios()
+      .then((dados) => {
+        if (!ignore) {
+          setCardapios(dados.filter((c) => c.ativo !== false));
+          setIsLoading(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!ignore) {
+          console.error("Erro ao carregar cardápios:", error);
+          setErrorMessage(getErrorMessage(error));
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   return (
@@ -57,6 +81,13 @@ export default function HomeClientePage() {
             <Skeleton className="h-64 w-full rounded-2xl" />
             <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
+        ) : errorMessage ? (
+          <div className="text-center py-20 bg-white rounded-2xl border p-8 shadow-sm">
+            <p className="text-red-600 font-medium mb-4">{errorMessage}</p>
+            <Button onClick={carregarCardapios} variant="outline">
+              Tentar Novamente
+            </Button>
+          </div>
         ) : cardapios.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             Nenhum cardápio disponível no momento.
@@ -64,14 +95,15 @@ export default function HomeClientePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {cardapios.map((cardapio) => (
-              <div 
+              <button
+                type="button"
                 key={cardapio.id} 
                 onClick={() => router.push(`/cardapio/${cardapio.id}`)}
-                className="group cursor-pointer bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col"
+                className="group text-left cursor-pointer bg-white rounded-2xl border shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-600 transition-all overflow-hidden flex flex-col"
               >
                 <div className="overflow-hidden border-b aspect-video">
                   <img
-                    src={(cardapio as any).imagemUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80"}
+                    src={cardapio.imagemUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80"}
                     alt={cardapio.nome}
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                   />
@@ -87,7 +119,7 @@ export default function HomeClientePage() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

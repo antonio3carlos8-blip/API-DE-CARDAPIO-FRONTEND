@@ -8,6 +8,7 @@ interface SearchBarProps {
 export function SearchBar({ value, onChange }: SearchBarProps) {
     return (
         <Input
+            aria-label="Buscar produtos"
             type="search"
             placeholder="Buscar produtos..."
             value={value}

@@ -1,96 +1,53 @@
-# 🍔 Cardápio Digital — Frontend
+# Cardápio Digital — Frontend
 
-Interface web do Cardápio Digital: exibe os cardápios de restaurantes e lanchonetes, com os produtos organizados por categoria, e consome a [API de Cardápio](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO).
-
-A aplicação é composta por duas partes: este frontend, responsável pela interface do usuário, e a API REST, responsável pelos dados e pela comunicação com o banco. O projeto será publicado em produção na Vercel.
-
-> **Status:** início do projeto. A base (Next.js + Tailwind) está configurada e as telas ainda serão construídas.
+Frontend Next.js 16/React 19 do Cardápio Digital. A aplicação oferece catálogo público, busca, carrinho com pedido real e painel autenticado para catálogo e fila da cozinha.
 
 ## Funcionalidades
 
-- [x] Estrutura do projeto (Next.js 16, App Router, TypeScript)
-- [x] Tailwind CSS configurado
-- [ ] Integração com a API
-- [ ] Listagem do cardápio com produtos por categoria
-- [ ] Pesquisa e filtro de produtos
-- [ ] Tela de detalhe do produto
-- [ ] Montagem do pedido e valor total
-- [ ] Layout responsivo
-- [ ] Deploy na Vercel
+- Lista somente cardápios ativos e bloqueia acesso direto a rascunhos.
+- Produtos agrupados por categoria, busca com debounce e indicação de indisponibilidade.
+- Carrinho responsivo com rolagem e área segura em telas curtas, nome/observação do cliente e confirmação somente depois da persistência do pedido.
+- Login administrativo em cookie `HttpOnly`.
+- CRUD de cardápios, categorias e produtos.
+- Fila de pedidos com atualização controlada de status.
+- Estados de carregamento, erro e tentativa novamente.
+- Labels, nomes acessíveis e navegação de cards por teclado.
+- BFF same-origin: o navegador nunca precisa conhecer a URL privada nem o token do backend.
 
-## Tecnologias
+## Rodar localmente
 
-| Ferramenta | Uso |
-|---|---|
-| Next.js 16 | Framework React (App Router) |
-| React 19 | Biblioteca de interface |
-| TypeScript 5 | Tipagem estática |
-| Tailwind CSS 4 | Estilização |
-| ESLint 9 | Padronização do código |
-
-## Como rodar
-
-**Pré-requisitos:** Node.js 20+ e a API rodando (veja o README do backend).
-
-**1. Instale as dependências**
+Requer Node.js 24+ e o backend em `http://127.0.0.1:3001`.
 
 ```bash
 npm install
-```
-
-**2. Suba o servidor de desenvolvimento**
-
-```bash
 npm run dev
 ```
 
-A aplicação abre em `http://localhost:3000`.
+Abra `http://localhost:3000`. Com o backend em modo local, a tela `/admin/login` mostra as credenciais exclusivamente demonstrativas. Elas não existem no modo de produção.
 
-> A API também usa a porta `3000` por padrão. Rodando os dois na mesma máquina, mude a porta de um deles — por exemplo, `PORT=3001` no `.env` da API, ou `npm run dev -- -p 3001` aqui no frontend.
+## Scripts
 
-### Scripts
-
-| Comando | O que faz |
+| Comando | Resultado |
 |---|---|
-| `npm run dev` | Servidor de desenvolvimento com hot reload |
-| `npm run build` | Gera o build de produção |
-| `npm start` | Sobe o build de produção |
-| `npm run lint` | Roda o ESLint |
+| `npm run dev` | Next com hot reload na porta 3000 |
+| `npm test` | Suíte Vitest/Testing Library |
+| `npm run test:coverage` | Suíte com cobertura do código inteiro e limiar de regressão |
+| `npm run lint` | ESLint com regras do React 19/Next 16 |
+| `npm run build` | Build de produção e typecheck |
+| `npm start` | Serve um build concluído |
 
-## Integração com a API
+## Integração segura
 
-A API expõe os recursos em `http://localhost:3000/api`:
-
-| Recurso | Rota |
-|---|---|
-| Cardápios | `/api/cardapios` |
-| Categorias | `/api/categorias` |
-| Produtos | `/api/produtos` |
-
-`GET /api/cardapios/:id` já devolve o cardápio completo, com as categorias e os produtos de cada uma — é a chamada que monta a tela principal. A documentação completa dos endpoints está no README da API.
-
-A URL base ficará em uma variável de ambiente, definida no arquivo `.env.local` (não versionado):
+O cliente chama apenas `/api/backend/...`. Route Handlers do Next encaminham essas chamadas para a variável privada `API_URL`, que deve terminar em `/api`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+API_URL="https://seu-backend.vercel.app/api"
 ```
 
-## Estrutura do projeto
+Não renomeie essa variável para `NEXT_PUBLIC_API_URL`: qualquer valor com prefixo `NEXT_PUBLIC_` é incorporado ao bundle do navegador.
 
-```
-src/
-  app/
-    layout.tsx       Layout raiz da aplicação
-    page.tsx         Página inicial
-    globals.css      Estilos globais e import do Tailwind
-next.config.ts       Configuração do Next.js
-postcss.config.mjs   Plugin do Tailwind para o PostCSS
-eslint.config.mjs    Regras do ESLint
-tsconfig.json        Configuração do TypeScript (alias `@/*` para `src/`)
-```
+O login chama `/api/auth/login`; o Route Handler recebe o JWT do backend e o grava em cookie `HttpOnly`, `SameSite=Strict` e `Secure` em produção. A camada `proxy.ts` faz apenas o redirecionamento otimista; a autorização efetiva permanece no backend.
 
-O alias `@/` aponta para `src/`, então os imports ficam como `import Header from "@/components/Header"`.
+## Deploy
 
-## Observação
-
-Os arquivos `AGENTS.md` e `CLAUDE.md` contêm instruções para assistentes de IA. O bloco dentro do `AGENTS.md` é gerado automaticamente pelo `next dev` e não deve ser editado à mão.
+Siga o checklist único em [DEPLOY_VERCEL.md](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO/blob/dev/DEPLOY_VERCEL.md). O frontend precisa somente de `API_URL`; nenhum segredo administrativo deve ser cadastrado neste projeto.
