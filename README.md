@@ -1,78 +1,53 @@
-# 🍔 Cardápio Digital — Frontend
+# Cardápio Digital — Frontend
 
-Interface web do Cardápio Digital. Consome a [API de Cardápio](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO) e exibe os produtos organizados por categoria, com busca por nome.
-
-Feito em HTML, CSS e JavaScript puros — sem framework e sem dependências para instalar.
+Frontend Next.js 16/React 19 do Cardápio Digital. A aplicação oferece catálogo público, busca, carrinho com pedido real e painel autenticado para catálogo e fila da cozinha.
 
 ## Funcionalidades
 
-- [x] Listagem dos produtos agrupados por categoria
-- [x] Busca de produtos por nome
-- [x] Preço formatado em real (R$)
-- [x] Destaque visual para produtos indisponíveis
-- [x] Layout responsivo
-- [x] Aviso quando a API está fora do ar
-- [ ] Montagem de pedido
-- [ ] Cálculo do valor total do pedido
+- Lista somente cardápios ativos e bloqueia acesso direto a rascunhos.
+- Produtos agrupados por categoria, busca com debounce e indicação de indisponibilidade.
+- Carrinho responsivo com rolagem e área segura em telas curtas, nome/observação do cliente e confirmação somente depois da persistência do pedido.
+- Login administrativo em cookie `HttpOnly`.
+- CRUD de cardápios, categorias e produtos.
+- Fila de pedidos com atualização controlada de status.
+- Estados de carregamento, erro e tentativa novamente.
+- Labels, nomes acessíveis e navegação de cards por teclado.
+- BFF same-origin: o navegador nunca precisa conhecer a URL privada nem o token do backend.
 
-## Tecnologias
+## Rodar localmente
 
-| Ferramenta | Uso |
-|---|---|
-| HTML5 | Estrutura da página |
-| CSS3 | Estilos e layout responsivo (Grid) |
-| JavaScript | Consumo da API com `fetch` |
-
-## Como rodar
-
-Este projeto depende da API. **Suba a API primeiro:**
+Requer Node.js 24+ e o backend em `http://127.0.0.1:3001`.
 
 ```bash
-cd ../API-de-Card-pio
+npm install
 npm run dev
 ```
 
-A API precisa estar respondendo em `http://localhost:3000`.
+Abra `http://localhost:3000`. Com o backend em modo local, a tela `/admin/login` mostra as credenciais exclusivamente demonstrativas. Elas não existem no modo de produção.
 
-**Depois abra o frontend** com a extensão **Live Server** do VS Code — clique com o botão direito no `index.html` e escolha *Open with Live Server*.
+## Scripts
 
-Abrir o arquivo direto pelo Explorer também costuma funcionar, mas o Live Server é mais confiável: o navegador trata páginas abertas por `file://` de forma diferente e isso pode esbarrar em bloqueio de CORS.
-
-## Estrutura
-
-```
-index.html    Estrutura da página
-style.css     Estilos
-script.js     Consumo da API e renderização
-```
-
-## Configuração da API
-
-O endereço da API fica na primeira linha do `script.js`:
-
-```js
-const API = "http://localhost:3000/api";
-```
-
-Em produção, troque pela URL da API publicada:
-
-```js
-const API = "https://sua-api.vercel.app/api";
-```
-
-E libere a URL do frontend na variável `CORS_ORIGIN` da API — sem isso o navegador bloqueia as requisições.
-
-## Endpoints consumidos
-
-| Endpoint | Uso |
+| Comando | Resultado |
 |---|---|
-| `GET /api/produtos` | Carrega o cardápio completo |
-| `GET /api/produtos?busca=termo` | Filtra pelo campo de busca |
+| `npm run dev` | Next com hot reload na porta 3000 |
+| `npm test` | Suíte Vitest/Testing Library |
+| `npm run test:coverage` | Suíte com cobertura do código inteiro e limiar de regressão |
+| `npm run lint` | ESLint com regras do React 19/Next 16 |
+| `npm run build` | Build de produção e typecheck |
+| `npm start` | Serve um build concluído |
 
-Cada produto retornado já traz a categoria junto, e é por ela que o agrupamento na tela é feito.
+## Integração segura
 
-A busca é enviada para a API — o filtro acontece no banco, não no navegador — com uma pausa de 400ms após a digitação, para não disparar uma requisição a cada tecla.
+O cliente chama apenas `/api/backend/...`. Route Handlers do Next encaminham essas chamadas para a variável privada `API_URL`, que deve terminar em `/api`:
 
-## Projeto relacionado
+```env
+API_URL="https://seu-backend.vercel.app/api"
+```
 
-[**API-DE-CARDAPIO**](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO) — a API REST que serve os dados, feita com Node.js, Express, Prisma e PostgreSQL.
+Não renomeie essa variável para `NEXT_PUBLIC_API_URL`: qualquer valor com prefixo `NEXT_PUBLIC_` é incorporado ao bundle do navegador.
+
+O login chama `/api/auth/login`; o Route Handler recebe o JWT do backend e o grava em cookie `HttpOnly`, `SameSite=Strict` e `Secure` em produção. A camada `proxy.ts` faz apenas o redirecionamento otimista; a autorização efetiva permanece no backend.
+
+## Deploy
+
+Siga o checklist único em [DEPLOY_VERCEL.md](https://github.com/antonio3carlos8-blip/API-DE-CARDAPIO/blob/dev/DEPLOY_VERCEL.md). O frontend precisa somente de `API_URL`; nenhum segredo administrativo deve ser cadastrado neste projeto.
